@@ -141,12 +141,15 @@ namespace PizzaHotOnion.Controllers
         var users = await this.userRepository.GetAll();
         if(users != null && users.Count() > 0)
         {
-          this.emailSerice
-            .Send(
-              string.Join(",", users.Where(u => u.EmailNotification && u.Email != orderDTO.Who).Select(u => u.Email).ToArray()),
-              "Hot Onion",
-              $"Oops someone is hungry. The pizza has been just opened in {orderDTO.Room} room by {orderDTO.Who}. Can you join me? Let's get some pizza."
-            );
+          foreach (var user in users.Where(u => u.EmailNotification && u.Email != orderDTO.Who))
+          {
+            this.emailSerice
+              .Send(
+                user.Email,
+                "Hot Onion",
+                $"Oops someone is hungry. The pizza has been just opened in {orderDTO.Room} room by {orderDTO.Who}. Can you join me? Let's get some pizza."
+              );
+          }
         }
       }
 
