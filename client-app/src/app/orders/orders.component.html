@@ -33,6 +33,24 @@
       </div>
     </form>
     <br>
+
+    <div *ngIf="isOrderArrived">
+      <h2 class="bg-success">Pizza arrived!</h2>
+    </div>
+    <div *ngIf="!isApprover && pricePerSlice > 0">
+      <div class="bg-info">Price per slice: {{pricePerSlice}} PLN</div>
+      <div *ngIf="order.quantity > 0" class="bg-info">Your order cost: <b>{{orderPrice}} PLN</b></div>
+    </div>
+    <div *ngIf="isApprover">
+      <form #approversForm="ngForm" (submit)="setPrice()" class="form-inline">
+        <div class="form-group">
+          <input type="number" class="form-control" id="price" name="price" [(ngModel)]="pricePerSlice" placeholder="Price per slice"
+                 [disabled]="!isApprover || isOrderArrived" required>
+          <button class="btn btn-primary btn-submit" type="submit" [disabled]="!isApprover || isOrderArrived">Set price</button>
+          <button class="btn btn-success" type="submit" (click)="orderArrived()" [disabled]="isOrderArrived">Pizza arrived!</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <br>

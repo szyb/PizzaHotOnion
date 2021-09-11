@@ -64,7 +64,7 @@ namespace PizzaHotOnion.Services
       }
       catch (Exception ex)
       {
-        loggger.LogError(ex.Message);
+        loggger.LogError($"Failed to send e-mail to: {to}, subject:{subject}: {ex.Message}");
       }
     }
   }

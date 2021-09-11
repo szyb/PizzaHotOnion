@@ -109,7 +109,8 @@ namespace PizzaHotOnion.Services
       return new UserProfileDTO
       {
         Email = user.Email,
-        EmailNotification = user.EmailNotification
+        EmailNotification = user.EmailNotification,
+        ApproversMessage = user.ApproversMessage
       };
     }
 
@@ -120,6 +121,7 @@ namespace PizzaHotOnion.Services
         throw new BusinessException("Cannot save user profile because does not exist");
 
       user.EmailNotification = userProfileDTO.EmailNotification;
+      user.ApproversMessage = userProfileDTO.ApproversMessage;
 
       await this.userRepository.Update(user);
     }

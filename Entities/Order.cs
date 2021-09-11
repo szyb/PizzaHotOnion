@@ -9,5 +9,5 @@ namespace PizzaHotOnion.Entities
     public int Quantity { get; set; }
     public User Who { get; set; }
     public Room Room { get; set; }
-  }
+    public decimal Price { get; set; }  }
 }
