@@ -225,15 +225,15 @@ export class OrdersComponent implements OnInit {
     });
   }
 
-  public makeOrder(): boolean {
+  public makeOrder(): boolean {    
     this.ordersService.makeOrder(this.order)
       .subscribe(result => {
-        if (result) 
+        if (result)
           this.loadOrdersInRoom(this.selectedRoomName);
 
       },
-      error => alert(ErrorHelper.getErrorMessage(error))
-      );
+        error => alert(ErrorHelper.getErrorMessage(error))
+      );    
     return false;
   }
 
@@ -285,14 +285,16 @@ export class OrdersComponent implements OnInit {
   }
 
   public approveOrders(): void {
-    this.ordersService.approveOrders(this.selectedRoomName, this.authenticationService.getLoggedUser())
-      .subscribe(
-        result => {
-          this.refresh();
-          this.isApprover = true;
-        },
-      error => alert(ErrorHelper.getErrorMessage(error))
-      );
+    if (confirm("Are you sure you want to approve all orders? ")) {
+      this.ordersService.approveOrders(this.selectedRoomName, this.authenticationService.getLoggedUser())
+        .subscribe(
+          result => {
+            this.refresh();
+            this.isApprover = true;
+          },
+          error => alert(ErrorHelper.getErrorMessage(error))
+        );
+    }
   }
 
   // events
