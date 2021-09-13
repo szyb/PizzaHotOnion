@@ -9,6 +9,7 @@ using PizzaHotOnion.DTOs;
 using PizzaHotOnion.Entities;
 using PizzaHotOnion.Repositories;
 using PizzaHotOnion.Services;
+using System.IO;
 
 namespace PizzaHotOnion.Controllers
 {
@@ -142,13 +143,20 @@ namespace PizzaHotOnion.Controllers
         var users = await this.userRepository.GetAll();
         if(users != null && users.Count() > 0)
         {
-          foreach (var user in users.Where(u => u.EmailNotification && u.Email != orderDTO.Who))
+          string initialMessage = $"Oops someone is hungry. The pizza has been just opened in {orderDTO.Room} room by {orderDTO.Who}. Can you join me? Let's get some pizza.";
+          if (System.IO.File.Exists("InitialMessage.txt"))
+          {
+            var fileInitialMessage = System.IO.File.ReadAllText("InitialMessage.txt");
+            if (!string.IsNullOrWhiteSpace(fileInitialMessage))
+              initialMessage = initialMessage + System.Environment.NewLine + fileInitialMessage;
+          }
+          foreach (var user in users.Where(u => u.EmailNotification))
           {
             this.emailSerice
               .Send(
                 user.Email,
-                "Hot Onion",
-                $"Oops someone is hungry. The pizza has been just opened in {orderDTO.Room} room by {orderDTO.Who}. Can you join me? Let's get some pizza."
+                "Hot Onion - someone is hungry",
+                initialMessage
               );
           }
         }
@@ -339,25 +347,26 @@ namespace PizzaHotOnion.Controllers
         StringBuilder approverSummary = new StringBuilder(); 
         string bodyTemplate =
 @"Pizza arrived!
-You ordered {0} slice(s) for {1} PLN in total.
-Below is the approver's ({2}) message.
+You ordered {0} slice(s) for {1} PLN in total ({2} PLN per slice)
+Below is the approver's ({3}) message.
 
-{3}
+{4}
 ";
         foreach (var order in orders)
         {
           var cost = Math.Round(order.Quantity * orderApproval.PricePerSlice, 2, MidpointRounding.AwayFromZero);
           approverSummary.AppendLine($"{order.Who.Email}: {order.Quantity} ({cost})");
           this.emailSerice.Send(order.Who.Email,
-            "Pizzzzza!",
+            "Hot Onion - Pizza arrived!",
             string.Format(bodyTemplate,
               order.Quantity,
               cost,
+              orderApproval.PricePerSlice, 
               approver.Email,
               approver.ApproversMessage));
         }
 
-        this.emailSerice.Send(approver.Email, "Pizza summary", "Below is an order summary" + Environment.NewLine + approverSummary.ToString());
+        this.emailSerice.Send(approver.Email, "Hot Onion - Pizza summary", "Below is an order summary" + Environment.NewLine + approverSummary.ToString());
 
         await this.messageHubContext.Clients.All
          .SendAsync(

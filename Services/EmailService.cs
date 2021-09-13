@@ -61,6 +61,7 @@ namespace PizzaHotOnion.Services
         message.Body = body;
         message.Subject = subject;
         client.Send(message);
+        loggger.LogDebug($"Mail has been sent to {to}, subject {subject}");
       }
       catch (Exception ex)
       {
