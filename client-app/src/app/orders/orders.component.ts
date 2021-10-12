@@ -80,16 +80,27 @@ export class OrdersComponent implements OnInit {
           case OperationType.SliceCancelled:
           case OperationType.OrdersApproved:
          
-            if(message.context == this.selectedRoomName)
+            if (message.context == this.selectedRoomName) {
               this.loadOrdersInRoom(this.selectedRoomName);
+              this.playSound_drop();
+            }
             break;
-          case OperationType.PriceIsSet:
+          case OperationType.PriceIsSet:            
             if (message.context == this.selectedRoomName)
-              this.loadApprovalInfo(this.selectedRoomName);
+              this.loadApprovalInfo(this.selectedRoomName);            
             break;
           case OperationType.OrderArrived:
-            if (message.context == this.selectedRoomName) {
+            if (message.context == this.selectedRoomName) {              
               this.loadApprovalInfo(this.selectedRoomName);
+              this.playSound_fanfare();
+            }
+            break;
+          case OperationType.ApprovalIsCancelled:
+            if (message.context == this.selectedRoomName) {
+              console.log("Approval is cancelled");
+              this.pricePerSlice = null;
+              this.loadOrdersInRoom(this.selectedRoomName);
+              this.playSound_drop();
             }
             break;
         }
@@ -295,6 +306,30 @@ export class OrdersComponent implements OnInit {
           error => alert(ErrorHelper.getErrorMessage(error))
         );
     }
+  }
+
+  public cancelApproval(): void {
+    if (confirm("Are you sure you want to cancel approval?")) {
+      this.ordersService.cancelApproval(this.selectedRoomName, this.authenticationService.getLoggedUser())
+        .subscribe(
+          result => {
+            this.refresh();
+            this.isApprover = false;
+            this.isApproved = false;
+          },
+          error => alert(ErrorHelper.getErrorMessage(error))
+        );
+    }
+  }
+
+  playSound_fanfare() {
+    const audio = new Audio("assets/Pizza_fanfare.mp3");
+    audio.play();
+  }
+
+  playSound_drop() {
+    const audio = new Audio("assets/water_drop.wav");
+    audio.play();
   }
 
   // events

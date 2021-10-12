@@ -26,10 +26,9 @@
         <input type="number" class="form-control" id="quantity" name="quantity" [(ngModel)]="order.quantity" placeholder="Number of slices"
           [disabled]="isApproved" required>
         <button class="btn btn-primary btn-submit" type="submit" [disabled]="!orderForm.form.valid || isApproved">Grab</button>
-        <button class="btn btn-danger" type="button" (click)="cancel()" [disabled]="isApproved">Cancel</button>
-        
-        <button class="btn btn-warning" type="button" (click)="approveOrders()" [disabled]="isApproved || pizzas == 0">Approve orders</button>
-        <!-- <button class="btn btn-success" type="button" (click)="refresh()">Refresh</button> -->
+        <button class="btn btn-danger" type="button" (click)="cancel()" [disabled]="isApproved">Cancel</button>        
+        <button class="btn btn-warning" type="button" (click)="approveOrders()" [disabled]="isApproved || pizzas == 0">Approve orders</button>        
+        <button *ngIf="isApproved && isApprover" class="btn btn-danger" type="button" (click)="cancelApproval()" [disabled]="!isApprover">Cancel approval</button>        
       </div>
     </form>
     <br>

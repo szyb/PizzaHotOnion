@@ -280,6 +280,31 @@ namespace PizzaHotOnion.Controllers
       return CreatedAtRoute("GetAll", new { room = room }, new { });
     }
 
+    [HttpPost("{room}/cancelApproval")]
+    public async Task<IActionResult> CancelApproval(string room, [FromBody]CancelApprovalDTO cancelApprovalDTO)
+    {
+      if (string.IsNullOrWhiteSpace(room) || cancelApprovalDTO == null || room != cancelApprovalDTO.Room)
+        return BadRequest("Cannot cancel approval due to bad request");
+
+      DateTime orderDay = DateTime.Now.Date;
+
+      var approval = await this.ordersApprovalRepository.GetByRoomDayAsync(room, orderDay);
+      if (approval == null)
+        return BadRequest("Cannot cancel approve orders because it is not aproved yet!");
+
+      if (approval.Who == cancelApprovalDTO.Who)
+      {
+        await this.ordersApprovalRepository.Remove(approval.Id);
+        await this.messageHubContext.Clients.All
+          .SendAsync(
+          "Send",
+          new MessageDTO { Operation = OperationType.ApprovalIsCancelled, Context = room });
+        return NoContent();
+      }
+      else
+        return BadRequest("Cannot cancel approval because approver missmatch with the request");
+    }
+
     [HttpPost("{room}/setPrice")]
     public async Task<IActionResult> SetPrice(string room, [FromBody]SetPriceDTO setPriceDTO)
     {

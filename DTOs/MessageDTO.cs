@@ -16,6 +16,7 @@ namespace PizzaHotOnion.DTOs
     SliceCancelled = 4,
     OrdersApproved = 5,
     PriceIsSet = 6,
-    OrderArrived = 7
+    OrderArrived = 7,
+    ApprovalIsCancelled = 8
   }
 }

@@ -7,7 +7,7 @@ import "rxjs/add/operator/map";
 import { Config } from "../shared/config";
 import { OrderItem } from "./order-item.model";
 import { ApprovalInfo, ApproveOrders, Order, SetPrice } from "./order.model";
-import { OrdersApproval } from "./orders-approval.model";
+import { CancelApproval, OrdersApproval } from "./orders-approval.model";
 import { SERVER_TRANSITION_PROVIDERS } from "@angular/platform-browser/src/browser/server-transition";
 
 @Injectable()
@@ -70,7 +70,17 @@ export class OrdersService {
     return this.http.post(
       `${Config.apiUrl}orders/${room}/orderArrived`, null, { observe: 'response' }
     ).map(response => response.status == 201);
-    
+  }
+
+  public cancelApproval(room: string, who: string): Observable<boolean> {
+    let cancelApproval = new CancelApproval();
+    cancelApproval.who = who;
+    cancelApproval.room = room;
+    let body = JSON.stringify(cancelApproval);
+
+    return this.http.post(
+      `${Config.apiUrl}orders/${room}/cancelApproval`, body, { observe: 'response' }
+    ).map(response => response.status == 201);
   }
 
 }
