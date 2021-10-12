@@ -28,7 +28,7 @@
         <button class="btn btn-primary btn-submit" type="submit" [disabled]="!orderForm.form.valid || isApproved">Grab</button>
         <button class="btn btn-danger" type="button" (click)="cancel()" [disabled]="isApproved">Cancel</button>        
         <button class="btn btn-warning" type="button" (click)="approveOrders()" [disabled]="isApproved || pizzas == 0">Approve orders</button>        
-        <button *ngIf="isApproved && isApprover" class="btn btn-danger" type="button" (click)="cancelApproval()" [disabled]="!isApprover">Cancel approval</button>        
+        <button *ngIf="isApproved && isApprover && !isOrderArrived" class="btn btn-danger" type="button" (click)="cancelApproval()" [disabled]="!isApprover">Cancel approval</button>        
       </div>
     </form>
     <br>
