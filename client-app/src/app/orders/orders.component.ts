@@ -32,13 +32,13 @@ export class OrdersComponent implements OnInit {
   public pizzas: number = 0;
   public slicesToGet: number = 0;
   public isApproved: boolean = false;
-  public isApprover: boolean = false;
-  public pricePerSlice: number;
+  public isApprover: boolean = false;  
   public orderPrice: string = null;
   public myQuantity: number = 0;
   public isOrderArrived: boolean = false;
-
-
+  public pricePerPizza: number;
+  public slicesPerPizza: number = 0;
+  public pricePerSlice: number = 0;
 
   @ViewChild(BaseChartDirective) chart: BaseChartDirective;
 
@@ -86,8 +86,10 @@ export class OrdersComponent implements OnInit {
             }
             break;
           case OperationType.PriceIsSet:            
-            if (message.context == this.selectedRoomName)
-              this.loadApprovalInfo(this.selectedRoomName);            
+            if (message.context == this.selectedRoomName) {
+              this.loadOrdersInRoom(this.selectedRoomName);
+              this.loadApprovalInfo(this.selectedRoomName);
+            }            
             break;
           case OperationType.OrderArrived:
             if (message.context == this.selectedRoomName) {              
@@ -98,7 +100,8 @@ export class OrdersComponent implements OnInit {
           case OperationType.ApprovalIsCancelled:
             if (message.context == this.selectedRoomName) {
               console.log("Approval is cancelled");
-              this.pricePerSlice = null;
+              this.pricePerPizza = null;
+              this.slicesPerPizza = 8;
               this.loadOrdersInRoom(this.selectedRoomName);
               this.playSound_drop();
             }
@@ -137,7 +140,8 @@ export class OrdersComponent implements OnInit {
     this.selectedRoomName = roomName;
     this.order.room = roomName;
     this.isApprover = false;
-    this.pricePerSlice = null;
+    this.pricePerPizza = null;
+    this.slicesPerPizza = 8;
     this.orderPrice = null;
     this.isOrderArrived = false;
 
@@ -163,7 +167,8 @@ export class OrdersComponent implements OnInit {
         info => {
           if (info.approver == this.authenticationService.getLoggedUser())
             this.isApprover = true;
-          this.pricePerSlice = info.pricePerSlice;
+          this.pricePerPizza = info.pricePerPizza;
+          this.slicesPerPizza = info.slicesPerPizza;
           if (info.orderArrived)
             this.isOrderArrived = true;
           this.onPriceChange();          
@@ -179,16 +184,24 @@ export class OrdersComponent implements OnInit {
     this.checkIsApproved();
     this.preparePizzaChart();
     this.loadApprovalInfo(this.selectedRoomName);
+
+    let currentUserEmail = this.authenticationService.getLoggedUser();
+    this.orderItems.forEach((o) => {
+      if (o.who == currentUserEmail) {      
+        this.orderPrice = o.price.toString();    
+      }
+    });
   }
 
   private onPriceChange(): void {
     if (this.order != null && this.order.quantity > 0) {
-      const tmpPrice = this.order.quantity * this.pricePerSlice;
-      this.orderPrice = tmpPrice.toFixed(2);
+      //const tmpPrice = this.order.quantity * this.pricePerPizza;
+      //this.orderPrice = tmpPrice.toFixed(2);
     }
   }
 
-  private checkIsApproved(): void {
+  private checkIsApproved(): void 
+  {
     this.isApproved = this.orderItems.some(item => item.isApproved);
   }
 
@@ -197,7 +210,7 @@ export class OrdersComponent implements OnInit {
 
     this.orderItems.forEach((o) => {
       if (o.who == currentUserEmail) {
-        this.order.quantity = o.quantity;
+        this.order.quantity = o.quantity;        
       }
     });
   }
@@ -249,10 +262,9 @@ export class OrdersComponent implements OnInit {
   }
 
   public setPrice(): boolean {
-    this.ordersService.setPrice(this.authenticationService.getLoggedUser(), this.order.room, this.pricePerSlice)
+    this.ordersService.setPrice(this.authenticationService.getLoggedUser(), this.order.room, this.pricePerPizza, this.slicesPerPizza)
       .subscribe(
         result => {
-
       },
         error => alert(ErrorHelper.getErrorMessage(error))
       );

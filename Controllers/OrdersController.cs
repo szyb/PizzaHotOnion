@@ -56,6 +56,7 @@ namespace PizzaHotOnion.Controllers
           Day = order.Day,
           Who = order.Who.Email,
           Quantity = order.Quantity,
+          Price = order.Price,
           Room = order.Room.Name,
           IsApproved = ordersApproval != null
         });
@@ -78,6 +79,7 @@ namespace PizzaHotOnion.Controllers
         Id = order.Id,
         Day = order.Day,
         Quantity = order.Quantity,
+        Price = order.Price,
         Who = order.Who.Email,
         Room = order.Room.Name
       };
@@ -308,7 +310,8 @@ namespace PizzaHotOnion.Controllers
     [HttpPost("{room}/setPrice")]
     public async Task<IActionResult> SetPrice(string room, [FromBody]SetPriceDTO setPriceDTO)
     {
-      if (setPriceDTO == null || setPriceDTO.PricePerSlice < 0.0m || string.IsNullOrWhiteSpace(setPriceDTO.Who) || string.IsNullOrWhiteSpace(room) || room != setPriceDTO.Room)
+      if (setPriceDTO == null || setPriceDTO.PricePerPizza < 0.0m || string.IsNullOrWhiteSpace(setPriceDTO.Who) || string.IsNullOrWhiteSpace(room) || room != setPriceDTO.Room ||
+          setPriceDTO.SlicesPerPizza < 0)
         return BadRequest();
 
       DateTime orderDay = DateTime.Now.Date;
@@ -319,12 +322,16 @@ namespace PizzaHotOnion.Controllers
       if (orderApproval.Who != setPriceDTO.Who)
         return BadRequest("Cannot set price because only approver can do this");
 
-      orderApproval.PricePerSlice = setPriceDTO.PricePerSlice;
+      orderApproval.PricePerPizza = setPriceDTO.PricePerPizza;
+      orderApproval.SlicesPerPizza = setPriceDTO.SlicesPerPizza;
+
       await this.ordersApprovalRepository.Update(orderApproval).ConfigureAwait(false);
+
       var orders = await this.orderRepository.GetAllInRoom(room, orderDay).ConfigureAwait(false);
+      
       foreach (var order in orders)
       {
-        order.Price = Math.Round(order.Quantity * setPriceDTO.PricePerSlice, MidpointRounding.AwayFromZero);
+        order.Price = Math.Round((setPriceDTO.PricePerPizza / (setPriceDTO.SlicesPerPizza * orderApproval.PizzaQuantity)) * order.Quantity, 2, MidpointRounding.AwayFromZero);        
         await this.orderRepository.Update(order).ConfigureAwait(false);
       }
 
@@ -349,8 +356,9 @@ namespace PizzaHotOnion.Controllers
         return new ObjectResult(new ApprovalInfoDTO() 
         { 
           Approver = orderApproval.Who, 
-          PricePerSlice = orderApproval.PricePerSlice,
-          OrderArrived = orderApproval.Arrived
+          PricePerPizza = orderApproval.PricePerPizza,
+          SlicesPerPizza = orderApproval.SlicesPerPizza,
+          OrderArrived = orderApproval.Arrived          
         });
       else return Ok();
     }
@@ -371,22 +379,27 @@ namespace PizzaHotOnion.Controllers
         var approver = await this.userRepository.GetByEmailAsync(orderApproval.Who).ConfigureAwait(false);
         StringBuilder approverSummary = new StringBuilder(); 
         string bodyTemplate =
-@"Pizza arrived!
-You ordered {0} slice(s) for {1} PLN in total ({2} PLN per slice)
-Below is the approver's ({3}) message.
+              @"Pizza arrived!
+              You ordered {0} slice(s) for {1} PLN in total ({2} PLN per slice)
+              Below is the approver's ({3}) message.
 
-{4}
-";
+              {4}
+              ";
+
+        var pricePerSlice = Math.Round((orderApproval.PricePerPizza / (orderApproval.SlicesPerPizza * orderApproval.PizzaQuantity)), 2, MidpointRounding.AwayFromZero);
+
         foreach (var order in orders)
         {
-          var cost = Math.Round(order.Quantity * orderApproval.PricePerSlice, 2, MidpointRounding.AwayFromZero);
+          //var cost = Math.Round(order.Quantity * orderApproval.PricePerPizza, 2, MidpointRounding.AwayFromZero);
+          var cost = order.Price;
+
           approverSummary.AppendLine($"{order.Who.Email}: {order.Quantity} ({cost})");
           this.emailSerice.Send(order.Who.Email,
             "Hot Onion - Pizza arrived!",
             string.Format(bodyTemplate,
               order.Quantity,
               cost,
-              orderApproval.PricePerSlice, 
+              pricePerSlice, 
               approver.Email,
               approver.ApproversMessage));
         }

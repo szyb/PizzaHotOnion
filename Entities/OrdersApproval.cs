@@ -10,7 +10,9 @@ namespace PizzaHotOnion.Entities
     public DateTime Day { get; set; }
     public int PizzaQuantity { get; set; }
     public string Who { get; set; }
-    public decimal PricePerSlice { get; set; }
+    public decimal PricePerPizza { get; set; }
+    public decimal SlicesPerPizza { get; set; }
     public bool Arrived { get; internal set; }
   }
 }
+

@@ -9,6 +9,7 @@ namespace PizzaHotOnion.DTOs
   {
     public string Room { get; set; }
     public string Who { get; set; }
-    public decimal PricePerSlice { get; set; }
+    public decimal PricePerPizza { get; set; }
+    public decimal SlicesPerPizza { get; set; }    
   }
 }

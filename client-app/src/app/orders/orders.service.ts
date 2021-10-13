@@ -48,11 +48,12 @@ export class OrdersService {
     ).map(response => response.status == 201);
   }
 
-  public setPrice(who: string, room: string, price: number): Observable<boolean> {
+  public setPrice(who: string, room: string, pricePerPizza: number, slicesPerPizza: number): Observable<boolean> {
     let setPrice = new SetPrice();
     setPrice.who = who;
     setPrice.room = room;
-    setPrice.pricePerSlice = price;
+    setPrice.pricePerPizza = pricePerPizza;
+    setPrice.slicesPerPizza = slicesPerPizza;
 
     let body = JSON.stringify(setPrice);
 
@@ -60,7 +61,7 @@ export class OrdersService {
       `${Config.apiUrl}orders/${room}/setPrice`, body, { observe: 'response' }
     ).map(response => response.status == 201);
   }
-
+    
   public getApprovalInfo(room: string): Observable<ApprovalInfo> {
     return this.http.get<ApprovalInfo>(
       `${Config.apiUrl}orders/${room}/approvalInfo`);

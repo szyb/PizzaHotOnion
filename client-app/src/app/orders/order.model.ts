@@ -12,11 +12,13 @@ export class ApproveOrders {
 export class SetPrice {
   public who: string;
   public room: string;
-  public pricePerSlice: number;
+  public pricePerPizza: number;
+  public slicesPerPizza: number;
 }
 
 export class ApprovalInfo {
   public approver: string;
-  public pricePerSlice: number;
+  public pricePerPizza: number;
+  public slicesPerPizza: number;
   public orderArrived: boolean;
 }
