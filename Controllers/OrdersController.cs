@@ -373,6 +373,9 @@ namespace PizzaHotOnion.Controllers
       var orderApproval = await this.ordersApprovalRepository.GetByRoomDayAsync(room, orderDay).ConfigureAwait(false);
       if (orderApproval != null)
       {
+        if (orderApproval.SlicesPerPizza == 0 || orderApproval.PizzaQuantity == 0)
+          return BadRequest("SlicesPerPizza is 0 or PizzaQuantity = 0");
+
         orderApproval.Arrived = true;
         await this.ordersApprovalRepository.Update(orderApproval).ConfigureAwait(false);
         var orders = await this.orderRepository.GetAllInRoom(room, orderDay).ConfigureAwait(false);
