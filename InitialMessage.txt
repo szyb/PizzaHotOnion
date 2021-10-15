@@ -1,0 +1,18 @@
+﻿
+----
+2021-10-14: (1.1.0) What's NEW in Pizza HotOnion:
+* IMPORTANT: Please hit: CTRL+F5 in your browser to reload the page. After that there should be "ver. 1.1.0" in the bottom-right corner of the page
+* playing sound when pizza arrived ;)
+* For approvers: cancel approval is now available
+* For approvers: set price for whole receipt (not per slice)
+* For approvers: add possibility to change numer of slices per pizza
+
+
+2021-09-13: What's NEW in Pizza HotOnion:
+* IMPORTANT: Please hit: CTRL+F5 in your browser to reload the page. After that there should be "ver. 1.0.0" in the bottom-right corner of the page
+* Confirmation before approve orders
+* Add price calculation (Approver ads price for slice)
+* Mail is being sent when pizza arrives (personalized mail with the total cost per order)
+* All mails are personalized (no more one mail to all)
+* Change chart colors
+* Profile: all users can set now Approver's message (i.e. payment information)

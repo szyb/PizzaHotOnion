@@ -8,5 +8,6 @@ namespace PizzaHotOnion.Entities
     public string Email { get; set; }
     public string Passwd { get; set; }
     public bool EmailNotification { get; set; }
+    public string ApproversMessage { get; set; }
   }
 }

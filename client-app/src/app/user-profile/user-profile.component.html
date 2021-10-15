@@ -19,9 +19,13 @@
       <form #profileForm="ngForm" (submit)="saveProfile()">
         <fieldset>
           <legend>User profile of {{model.email}}</legend>
+          <div class="form-group">
+            <label>Approver message (i.e. payment information):</label>
+              <textarea class="form-control" id="approversMessage" rows="10" name="approversMessage" [(ngModel)]="userProfileModel.approversMessage"></textarea>
+          </div>
           <div class="form-check">
             <label class="form-check-label">
-              <input type="checkbox" class="form-check-input" id="emailNotification" name="emailNotification" [(ngModel)]="userProfileModel.emailNotification"> E-mail notification
+              <input type="checkbox" class="form-check-input" id="emailNotification" name="emailNotification" [(ngModel)]="userProfileModel.emailNotification"> E-mail notification (first order in the room)
             </label>
           </div>
         </fieldset>

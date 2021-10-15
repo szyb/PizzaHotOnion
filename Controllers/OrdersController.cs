@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -8,6 +9,7 @@ using PizzaHotOnion.DTOs;
 using PizzaHotOnion.Entities;
 using PizzaHotOnion.Repositories;
 using PizzaHotOnion.Services;
+using System.IO;
 
 namespace PizzaHotOnion.Controllers
 {
@@ -54,6 +56,7 @@ namespace PizzaHotOnion.Controllers
           Day = order.Day,
           Who = order.Who.Email,
           Quantity = order.Quantity,
+          Price = order.Price,
           Room = order.Room.Name,
           IsApproved = ordersApproval != null
         });
@@ -76,6 +79,7 @@ namespace PizzaHotOnion.Controllers
         Id = order.Id,
         Day = order.Day,
         Quantity = order.Quantity,
+        Price = order.Price,
         Who = order.Who.Email,
         Room = order.Room.Name
       };
@@ -141,12 +145,22 @@ namespace PizzaHotOnion.Controllers
         var users = await this.userRepository.GetAll();
         if(users != null && users.Count() > 0)
         {
-          this.emailSerice
-            .Send(
-              string.Join(",", users.Where(u => u.EmailNotification && u.Email != orderDTO.Who).Select(u => u.Email).ToArray()),
-              "Hot Onion",
-              $"Oops someone is hungry. The pizza has been just opened in {orderDTO.Room} room by {orderDTO.Who}. Can you join me? Let's get some pizza."
-            );
+          string initialMessage = $"Oops someone is hungry. The pizza has been just opened in {orderDTO.Room} room by {orderDTO.Who}. Can you join me? Let's get some pizza.";
+          if (System.IO.File.Exists("InitialMessage.txt"))
+          {
+            var fileInitialMessage = System.IO.File.ReadAllText("InitialMessage.txt");
+            if (!string.IsNullOrWhiteSpace(fileInitialMessage))
+              initialMessage = initialMessage + System.Environment.NewLine + fileInitialMessage;
+          }
+          foreach (var user in users.Where(u => u.EmailNotification))
+          {
+            this.emailSerice
+              .Send(
+                user.Email,
+                "Hot Onion - someone is hungry",
+                initialMessage
+              );
+          }
         }
       }
 
@@ -221,7 +235,7 @@ namespace PizzaHotOnion.Controllers
     }
 
     [HttpPost("{room}/approve")]
-    public async Task<IActionResult> Approve(string room/*, [FromBody]ApproveOrdersDTO approveOrdersDTO*/)
+    public async Task<IActionResult> Approve(string room, [FromBody]ApproveOrdersDTO approveOrdersDTO)
     {
       // if (approveOrdersDTO == null)
       //   return BadRequest();
@@ -231,6 +245,9 @@ namespace PizzaHotOnion.Controllers
 
       if (string.IsNullOrEmpty(room))
         return BadRequest("Cannot approve orders because room name is incorrect");
+
+      if (approveOrdersDTO == null || approveOrdersDTO.Room != room || string.IsNullOrWhiteSpace(approveOrdersDTO.Approver))
+        return BadRequest("Cannot approve orders because approver is missing");
 
       // if (room != approveOrdersDTO.Room)
       //   return BadRequest("Incorect room");
@@ -252,6 +269,7 @@ namespace PizzaHotOnion.Controllers
       ordersApprovalEntity.Day = orderDay;
       ordersApprovalEntity.Room = roomEntity;
       ordersApprovalEntity.PizzaQuantity = pizzas;
+      ordersApprovalEntity.Who = approveOrdersDTO.Approver;
       await this.ordersApprovalRepository.Add(ordersApprovalEntity);
 
       //Broadcast message to client  
@@ -263,5 +281,146 @@ namespace PizzaHotOnion.Controllers
 
       return CreatedAtRoute("GetAll", new { room = room }, new { });
     }
+
+    [HttpPost("{room}/cancelApproval")]
+    public async Task<IActionResult> CancelApproval(string room, [FromBody]CancelApprovalDTO cancelApprovalDTO)
+    {
+      if (string.IsNullOrWhiteSpace(room) || cancelApprovalDTO == null || room != cancelApprovalDTO.Room)
+        return BadRequest("Cannot cancel approval due to bad request");
+
+      DateTime orderDay = DateTime.Now.Date;
+
+      var approval = await this.ordersApprovalRepository.GetByRoomDayAsync(room, orderDay);
+      if (approval == null)
+        return BadRequest("Cannot cancel approve orders because it is not aproved yet!");
+
+      if (approval.Who == cancelApprovalDTO.Who)
+      {
+        await this.ordersApprovalRepository.Remove(approval.Id);
+        await this.messageHubContext.Clients.All
+          .SendAsync(
+          "Send",
+          new MessageDTO { Operation = OperationType.ApprovalIsCancelled, Context = room });
+        return NoContent();
+      }
+      else
+        return BadRequest("Cannot cancel approval because approver missmatch with the request");
+    }
+
+    [HttpPost("{room}/setPrice")]
+    public async Task<IActionResult> SetPrice(string room, [FromBody]SetPriceDTO setPriceDTO)
+    {
+      if (setPriceDTO == null || setPriceDTO.PricePerPizza < 0.0m || string.IsNullOrWhiteSpace(setPriceDTO.Who) || string.IsNullOrWhiteSpace(room) || room != setPriceDTO.Room ||
+          setPriceDTO.SlicesPerPizza < 0)
+        return BadRequest();
+
+      DateTime orderDay = DateTime.Now.Date;
+      var orderApproval = await this.ordersApprovalRepository.GetByRoomDayAsync(room, orderDay).ConfigureAwait(false);
+      if (orderApproval == null)
+        return BadRequest("Cannot set price because there is no approved orders");
+
+      if (orderApproval.Who != setPriceDTO.Who)
+        return BadRequest("Cannot set price because only approver can do this");
+
+      orderApproval.PricePerPizza = setPriceDTO.PricePerPizza;
+      orderApproval.SlicesPerPizza = setPriceDTO.SlicesPerPizza;
+
+      await this.ordersApprovalRepository.Update(orderApproval).ConfigureAwait(false);
+
+      var orders = await this.orderRepository.GetAllInRoom(room, orderDay).ConfigureAwait(false);
+      
+      foreach (var order in orders)
+      {
+        order.Price = Math.Round((setPriceDTO.PricePerPizza / (setPriceDTO.SlicesPerPizza * orderApproval.PizzaQuantity)) * order.Quantity, 2, MidpointRounding.AwayFromZero);        
+        await this.orderRepository.Update(order).ConfigureAwait(false);
+      }
+
+      await this.messageHubContext.Clients.All
+       .SendAsync(
+         "send",
+         new MessageDTO { Operation = OperationType.PriceIsSet, Context = room }
+       );
+
+      return NoContent();
+    }
+
+    [HttpGet("{room}/ApprovalInfo")]
+    public async Task<IActionResult> GetApprovalInfo(string room)
+    {
+      if (string.IsNullOrWhiteSpace(room))
+        return BadRequest("Room is not provided");
+
+      var orderDay = DateTime.Now.Date;
+      var orderApproval = await this.ordersApprovalRepository.GetByRoomDayAsync(room, orderDay).ConfigureAwait(false);
+      if (orderApproval != null)
+        return new ObjectResult(new ApprovalInfoDTO() 
+        { 
+          Approver = orderApproval.Who, 
+          PricePerPizza = orderApproval.PricePerPizza,
+          SlicesPerPizza = orderApproval.SlicesPerPizza,
+          OrderArrived = orderApproval.Arrived          
+        });
+      else return Ok();
+    }
+
+    [HttpPost("{room}/orderArrived")]
+    public async Task<IActionResult> OrderArrived(string room)
+    {
+      if (string.IsNullOrWhiteSpace(room))
+        return BadRequest("Room is not provided");
+
+      var orderDay = DateTime.Now.Date;
+      var orderApproval = await this.ordersApprovalRepository.GetByRoomDayAsync(room, orderDay).ConfigureAwait(false);
+      if (orderApproval != null)
+      {
+        if (orderApproval.SlicesPerPizza == 0 || orderApproval.PizzaQuantity == 0)
+          return BadRequest("SlicesPerPizza is 0 or PizzaQuantity = 0");
+
+        orderApproval.Arrived = true;
+        await this.ordersApprovalRepository.Update(orderApproval).ConfigureAwait(false);
+        var orders = await this.orderRepository.GetAllInRoom(room, orderDay).ConfigureAwait(false);
+        var approver = await this.userRepository.GetByEmailAsync(orderApproval.Who).ConfigureAwait(false);
+        StringBuilder approverSummary = new StringBuilder(); 
+        string bodyTemplate =
+              @"Pizza arrived!
+              You ordered {0} slice(s) for {1} PLN in total ({2} PLN per slice)
+              Below is the approver's ({3}) message.
+
+              {4}
+              ";
+
+        var pricePerSlice = Math.Round((orderApproval.PricePerPizza / (orderApproval.SlicesPerPizza * orderApproval.PizzaQuantity)), 2, MidpointRounding.AwayFromZero);
+
+        foreach (var order in orders)
+        {
+          //var cost = Math.Round(order.Quantity * orderApproval.PricePerPizza, 2, MidpointRounding.AwayFromZero);
+          var cost = order.Price;
+
+          approverSummary.AppendLine($"{order.Who.Email}: {order.Quantity} ({cost})");
+          this.emailSerice.Send(order.Who.Email,
+            "Hot Onion - Pizza arrived!",
+            string.Format(bodyTemplate,
+              order.Quantity,
+              cost,
+              pricePerSlice, 
+              approver.Email,
+              approver.ApproversMessage));
+        }
+
+        this.emailSerice.Send(approver.Email, "Hot Onion - Pizza summary", "Below is an order summary" + Environment.NewLine + approverSummary.ToString());
+
+        await this.messageHubContext.Clients.All
+         .SendAsync(
+           "send",
+           new MessageDTO { Operation = OperationType.OrderArrived, Context = room }
+       );
+
+        return NoContent();
+
+      }
+      else
+        return BadRequest("Cannot set order as arrived");
+    }
+
   }
 }

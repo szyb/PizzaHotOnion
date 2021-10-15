@@ -61,10 +61,11 @@ namespace PizzaHotOnion.Services
         message.Body = body;
         message.Subject = subject;
         client.Send(message);
+        loggger.LogDebug($"Mail has been sent to {to}, subject {subject}");
       }
       catch (Exception ex)
       {
-        loggger.LogError(ex.Message);
+        loggger.LogError($"Failed to send e-mail to: {to}, subject:{subject}: {ex.Message}");
       }
     }
   }

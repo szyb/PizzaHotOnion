@@ -26,13 +26,38 @@
         <input type="number" class="form-control" id="quantity" name="quantity" [(ngModel)]="order.quantity" placeholder="Number of slices"
           [disabled]="isApproved" required>
         <button class="btn btn-primary btn-submit" type="submit" [disabled]="!orderForm.form.valid || isApproved">Grab</button>
-        <button class="btn btn-danger" type="button" (click)="cancel()" [disabled]="isApproved">Cancel</button>
-        
-        <button class="btn btn-warning" type="button" (click)="approveOrders()" [disabled]="isApproved || pizzas == 0">Approve orders</button>
-        <!-- <button class="btn btn-success" type="button" (click)="refresh()">Refresh</button> -->
+        <button class="btn btn-danger" type="button" (click)="cancel()" [disabled]="isApproved">Cancel</button>        
+        <button class="btn btn-warning" type="button" (click)="approveOrders()" [disabled]="isApproved || pizzas == 0">Approve orders</button>        
+        <button *ngIf="isApproved && isApprover && !isOrderArrived" class="btn btn-danger" type="button" (click)="cancelApproval()" [disabled]="!isApprover">Cancel approval</button>        
       </div>
     </form>
     <br>
+
+    <div *ngIf="isOrderArrived">
+      <h2 class="bg-success">Pizza arrived!</h2>
+    </div>
+    <div *ngIf="pricePerPizza > 0">
+      <div class="bg-info">Price for pizza(s): {{pricePerPizza}} PLN</div>
+      <div *ngIf="order.quantity > 0" class="bg-info">Your order cost: <b>{{orderPrice}} PLN</b></div>
+    </div>
+    <br>
+
+    <div *ngIf="isApprover">      
+      <form #approversForm="ngForm" (submit)="setPrice()" class="form-inline">
+
+        <input type="number" class="form-control" id="slicesPerPizza" name="slicesPerPizza" [(ngModel)]="slicesPerPizza" placeholder="Slices per pizza"
+               [disabled]="!isApprover || isOrderArrived" required>                
+
+        <input type="number" class="form-control" id="price" name="price" [(ngModel)]="pricePerPizza" placeholder="Price per slice"
+               [disabled]="!isApprover || isOrderArrived" required>          
+
+        <div class="form-group">                    
+         <button class="btn btn-primary btn-submit" type="submit" [disabled]="!isApprover || isOrderArrived">Set receipt price</button>
+         <button class="btn btn-success" type="submit" (click)="orderArrived()" [disabled]="isOrderArrived">Pizza arrived!</button>                    
+        </div>       
+
+      </form>
+    </div>
   </div>
 
   <br>

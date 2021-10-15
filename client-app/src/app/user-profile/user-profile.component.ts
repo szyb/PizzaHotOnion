@@ -21,7 +21,7 @@ export class UserProfileComponent implements OnInit {
     public router: Router,
     private authenticationService: AuthenticationService) {
       this.model = new ChangePassword();
-      this.userProfileModel = new UserProfile('');
+      this.userProfileModel = new UserProfile('','');
   }
 
   ngOnInit() {
