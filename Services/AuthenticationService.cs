@@ -125,5 +125,42 @@ namespace PizzaHotOnion.Services
 
       await this.userRepository.Update(user);
     }
+
+    public async Task SaveResetCode(string email, string code)
+    {
+      var user = await this.userRepository.GetByEmailAsync(email);
+      if (user == null)
+        throw new BusinessException("Cannot save user profile because does not exist");
+
+      user.ResetCode = code;
+      user.ResetCodeValidTo = DateTime.Now.AddMinutes(15).ToUniversalTime();
+
+      await this.userRepository.Update(user);
+    }
+
+    public async Task<bool> SetNewPassword(string email, string code, string newPassword)
+    {
+      if (string.IsNullOrWhiteSpace(email))
+        throw new BusinessException("Cannot change password because e-mail is empty");
+
+      if (string.IsNullOrWhiteSpace(code))
+        throw new BusinessException("Cannot change password because code is empty");
+      var user = await this.userRepository.GetByEmailAsync(email);
+      if (user == null)
+        throw new BusinessException("Cannot save user profile because does not exist");
+
+      if (code.Equals(user.ResetCode, StringComparison.InvariantCultureIgnoreCase) && user.ResetCodeValidTo >= DateTime.Now.ToUniversalTime())
+      {
+        user.ResetCode = null;
+        user.ResetCodeValidTo = null;
+        user.Passwd = this.passwordHasher.Hash(user.Email, newPassword);
+        await this.userRepository.Update(user);
+
+        return true;
+      }
+      else
+        return false;
+
+    }
   }
 }

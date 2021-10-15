@@ -13,6 +13,7 @@ import { AppRoutingModule } from './app-routing.module';
 
 import { AppComponent } from './app.component';
 import { LoginComponent } from './login/login.component';
+import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
 import { OrdersComponent } from './orders/orders.component';
 import { RoomsComponent } from './rooms/rooms.component';
 import { AboutComponent } from './about/about.component';
@@ -25,6 +26,7 @@ import { UnauthorizedInterceptor } from './shared/auth/unauthorized.interceptor'
   declarations: [
     AppComponent,
     LoginComponent,
+    ForgotPasswordComponent,
     OrdersComponent,
     RoomsComponent,
     UserProfileComponent,
