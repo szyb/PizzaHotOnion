@@ -18,6 +18,7 @@
     <button class="btn btn-lg btn-primary btn-block btn-submit" type="submit" [disabled]="!loginForm.form.valid">{{isLoggingIn ? 'Sign In' : 'Sign Up'}}</button>
     <button class="btn btn-lg btn-primary btn-block btn-toggle" type="button" (click)="toggleDisplay()">{{isLoggingIn ? 'Sign Up' : 'Back to Login'}}</button>
   </form>
+  <a [routerLink]="['/forgot-password']" alt="Reset password">Reset password</a>
   <!--<p>
       <a href="#" class="forgot-password">
         Forgot the password?

@@ -9,6 +9,7 @@ import { UserProfileComponent } from './user-profile/user-profile.component';
 
 import { AuthGuard } from './shared/auth/auth.guard';
 import { LoginGuard } from './shared/auth/login.guard';
+import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent, canActivate: [LoginGuard] },
@@ -16,6 +17,7 @@ const routes: Routes = [
   { path: 'rooms', component: RoomsComponent, canActivate: [AuthGuard] },
   { path: 'about', component: AboutComponent, canActivate: [AuthGuard] },
   { path: 'profile', component: UserProfileComponent, canActivate: [AuthGuard] },
+  { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: '', redirectTo: '/orders', pathMatch: 'full' },
   { path: '**', redirectTo: '/orders' }
 ];
