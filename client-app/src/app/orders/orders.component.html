@@ -45,11 +45,17 @@
     <div *ngIf="isApprover">      
       <form #approversForm="ngForm" (submit)="setPrice()" class="form-inline">
 
-        <input type="number" class="form-control" id="slicesPerPizza" name="slicesPerPizza" [(ngModel)]="slicesPerPizza" placeholder="Slices per pizza"
+        <div class="container">
+          <input type="number" class="form-control" id="slicesPerPizza" name="slicesPerPizza" [(ngModel)]="slicesPerPizza" 
                [disabled]="!isApprover || isOrderArrived" required>                
+          <span class="ms">slices per pizza</span>
+        </div>
 
-        <input type="number" class="form-control" id="price" name="price" [(ngModel)]="pricePerPizza" placeholder="Price per slice"
+        <div class="container">
+          <input type="number" class="form-control" id="price" name="price" [(ngModel)]="pricePerPizza" 
                [disabled]="!isApprover || isOrderArrived" required>          
+          <span class="ms">price per pizza</span>
+        </div>
 
         <div class="form-group">                    
          <button class="btn btn-primary btn-submit" type="submit" [disabled]="!isApprover || isOrderArrived">Set receipt price</button>

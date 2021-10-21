@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, SimpleChanges } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild, SimpleChanges } from '@angular/core';
 import { Router } from '@angular/router';
 import { RoomService } from '../rooms/rooms.service';
 import { Room } from '../rooms/room.model';
@@ -20,8 +20,11 @@ import { Config } from '../shared/config';
     OrdersService,
     AuthenticationService
   ],
-  templateUrl: './orders.component.html'
+  templateUrl: './orders.component.html',
+  styleUrls: ['./orders.component.css']
 })
+
+
 export class OrdersComponent implements OnInit {
 
   public rooms: Room[] = [];
@@ -41,7 +44,7 @@ export class OrdersComponent implements OnInit {
   public pricePerSlice: number = 0;
 
   @ViewChild(BaseChartDirective) chart: BaseChartDirective;
-
+  
   // Pie
   public pieChartLabels: string[] = [];
   public pieChartData: number[] = [];
@@ -120,7 +123,7 @@ export class OrdersComponent implements OnInit {
   private loadRooms(): void {
     this.roomService.getRooms()
       .subscribe(rooms => this.onLoadRooms(rooms));
-  }
+  }  
 
   private onLoadRooms(rooms: Room[]): void {
     this.rooms = rooms;
@@ -261,7 +264,7 @@ export class OrdersComponent implements OnInit {
     return false;
   }
 
-  public setPrice(): boolean {
+  public setPrice(): boolean {  
     this.ordersService.setPrice(this.authenticationService.getLoggedUser(), this.order.room, this.pricePerPizza, this.slicesPerPizza)
       .subscribe(
         result => {
