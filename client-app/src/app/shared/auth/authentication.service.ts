@@ -57,7 +57,7 @@ export class AuthenticationService {
     )
       .catch(this.handleErrors);
   }
-    
+
   public register(user: User) {
     return this.http.post(
       Config.apiUrl + "user/register",
@@ -90,4 +90,15 @@ export class AuthenticationService {
     console.log(JSON.stringify(error.json()));
     return Observable.throw(error);
   }
+
+  public resetPassword(email: string): Observable<boolean> {
+    return this.http.post(
+      Config.apiUrl + "user/resetpassword",
+      JSON.stringify({
+        email: email
+      }),
+      { observe: 'response' }
+    ).map(response => response.status == 204);
+  }
+
 }

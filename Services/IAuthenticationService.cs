@@ -10,5 +10,7 @@ namespace PizzaHotOnion.Services
     Task ChangePassword(ChangePasswordDTO changePasswordDTO);
     Task<UserProfileDTO> GetUserProfileByEmail(string email);
     Task UpdateUserProfile(UserProfileDTO userProfileDTO);
+    Task SaveResetCode(string email, string code);
+    Task<bool> SetNewPassword(string email, string code, string newPassword);
   }
 }
