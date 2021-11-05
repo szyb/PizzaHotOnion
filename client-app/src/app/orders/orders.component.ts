@@ -40,7 +40,7 @@ export class OrdersComponent implements OnInit {
   public myQuantity: number = 0;
   public isOrderArrived: boolean = false;
   public pricePerPizza: number;
-  public slicesPerPizza: number = 0;
+  public slicesPerPizza: number = 8;
   public pricePerSlice: number = 0;
 
   @ViewChild(BaseChartDirective) chart: BaseChartDirective;

@@ -4,6 +4,7 @@ namespace PizzaHotOnion.Entities
 {
   public class OrdersApproval : Entity
   {
+    public static int DefaultSlicesPerPizza = 8;
     public OrdersApproval(Guid id) : base(id) { }
 
     public Room Room { get; set; }
@@ -15,4 +16,3 @@ namespace PizzaHotOnion.Entities
     public bool Arrived { get; internal set; }
   }
 }
-

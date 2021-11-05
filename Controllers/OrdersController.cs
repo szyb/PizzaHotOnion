@@ -88,7 +88,7 @@ namespace PizzaHotOnion.Controllers
     }
 
     [HttpPost("{room}")]
-    public async Task<IActionResult> Create(string room, [FromBody]MakeOrderDTO orderDTO)
+    public async Task<IActionResult> Create(string room, [FromBody] MakeOrderDTO orderDTO)
     {
       if (orderDTO == null)
         return BadRequest("Cannot add order because data is empty");
@@ -143,7 +143,7 @@ namespace PizzaHotOnion.Controllers
       if (sendMessage)
       {
         var users = await this.userRepository.GetAll();
-        if(users != null && users.Count() > 0)
+        if (users != null && users.Count() > 0)
         {
           string initialMessage = $"Oops someone is hungry. The pizza has been just opened in {orderDTO.Room} room by {orderDTO.Who}. Can you join me? Let's get some pizza.";
           if (System.IO.File.Exists("InitialMessage.txt"))
@@ -168,7 +168,7 @@ namespace PizzaHotOnion.Controllers
     }
 
     [HttpPatch("{room}/{id}")]
-    public async Task<IActionResult> Update(string room, Guid id, [FromBody]OrderDTO orderDTO)
+    public async Task<IActionResult> Update(string room, Guid id, [FromBody] OrderDTO orderDTO)
     {
       if (orderDTO == null)
         return BadRequest("Cannot update order because data is empty");
@@ -235,7 +235,7 @@ namespace PizzaHotOnion.Controllers
     }
 
     [HttpPost("{room}/approve")]
-    public async Task<IActionResult> Approve(string room, [FromBody]ApproveOrdersDTO approveOrdersDTO)
+    public async Task<IActionResult> Approve(string room, [FromBody] ApproveOrdersDTO approveOrdersDTO)
     {
       // if (approveOrdersDTO == null)
       //   return BadRequest();
@@ -263,13 +263,14 @@ namespace PizzaHotOnion.Controllers
 
       var orders = await this.orderRepository.GetAllInRoom(room, orderDay);
       int slices = orders.Sum(o => o.Quantity);
-      int pizzas = (int)Math.Ceiling((decimal)slices / 8);
+      int pizzas = (int)Math.Ceiling((decimal)slices / OrdersApproval.DefaultSlicesPerPizza);
 
       OrdersApproval ordersApprovalEntity = new OrdersApproval(Guid.NewGuid());
       ordersApprovalEntity.Day = orderDay;
       ordersApprovalEntity.Room = roomEntity;
       ordersApprovalEntity.PizzaQuantity = pizzas;
       ordersApprovalEntity.Who = approveOrdersDTO.Approver;
+      ordersApprovalEntity.SlicesPerPizza = OrdersApproval.DefaultSlicesPerPizza;
       await this.ordersApprovalRepository.Add(ordersApprovalEntity);
 
       //Broadcast message to client  
@@ -283,7 +284,7 @@ namespace PizzaHotOnion.Controllers
     }
 
     [HttpPost("{room}/cancelApproval")]
-    public async Task<IActionResult> CancelApproval(string room, [FromBody]CancelApprovalDTO cancelApprovalDTO)
+    public async Task<IActionResult> CancelApproval(string room, [FromBody] CancelApprovalDTO cancelApprovalDTO)
     {
       if (string.IsNullOrWhiteSpace(room) || cancelApprovalDTO == null || room != cancelApprovalDTO.Room)
         return BadRequest("Cannot cancel approval due to bad request");
@@ -308,7 +309,7 @@ namespace PizzaHotOnion.Controllers
     }
 
     [HttpPost("{room}/setPrice")]
-    public async Task<IActionResult> SetPrice(string room, [FromBody]SetPriceDTO setPriceDTO)
+    public async Task<IActionResult> SetPrice(string room, [FromBody] SetPriceDTO setPriceDTO)
     {
       if (setPriceDTO == null || setPriceDTO.PricePerPizza < 0.0m || string.IsNullOrWhiteSpace(setPriceDTO.Who) || string.IsNullOrWhiteSpace(room) || room != setPriceDTO.Room ||
           setPriceDTO.SlicesPerPizza < 0)
@@ -328,10 +329,10 @@ namespace PizzaHotOnion.Controllers
       await this.ordersApprovalRepository.Update(orderApproval).ConfigureAwait(false);
 
       var orders = await this.orderRepository.GetAllInRoom(room, orderDay).ConfigureAwait(false);
-      
+
       foreach (var order in orders)
       {
-        order.Price = Math.Round((setPriceDTO.PricePerPizza / (setPriceDTO.SlicesPerPizza * orderApproval.PizzaQuantity)) * order.Quantity, 2, MidpointRounding.AwayFromZero);        
+        order.Price = Math.Round((setPriceDTO.PricePerPizza / (setPriceDTO.SlicesPerPizza * orderApproval.PizzaQuantity)) * order.Quantity, 2, MidpointRounding.AwayFromZero);
         await this.orderRepository.Update(order).ConfigureAwait(false);
       }
 
@@ -353,12 +354,12 @@ namespace PizzaHotOnion.Controllers
       var orderDay = DateTime.Now.Date;
       var orderApproval = await this.ordersApprovalRepository.GetByRoomDayAsync(room, orderDay).ConfigureAwait(false);
       if (orderApproval != null)
-        return new ObjectResult(new ApprovalInfoDTO() 
-        { 
-          Approver = orderApproval.Who, 
+        return new ObjectResult(new ApprovalInfoDTO()
+        {
+          Approver = orderApproval.Who,
           PricePerPizza = orderApproval.PricePerPizza,
           SlicesPerPizza = orderApproval.SlicesPerPizza,
-          OrderArrived = orderApproval.Arrived          
+          OrderArrived = orderApproval.Arrived
         });
       else return Ok();
     }
@@ -380,7 +381,7 @@ namespace PizzaHotOnion.Controllers
         await this.ordersApprovalRepository.Update(orderApproval).ConfigureAwait(false);
         var orders = await this.orderRepository.GetAllInRoom(room, orderDay).ConfigureAwait(false);
         var approver = await this.userRepository.GetByEmailAsync(orderApproval.Who).ConfigureAwait(false);
-        StringBuilder approverSummary = new StringBuilder(); 
+        StringBuilder approverSummary = new StringBuilder();
         string bodyTemplate =
               @"Pizza arrived!
               You ordered {0} slice(s) for {1} PLN in total ({2} PLN per slice)
@@ -402,7 +403,7 @@ namespace PizzaHotOnion.Controllers
             string.Format(bodyTemplate,
               order.Quantity,
               cost,
-              pricePerSlice, 
+              pricePerSlice,
               approver.Email,
               approver.ApproversMessage));
         }
