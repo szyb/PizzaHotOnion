@@ -12,13 +12,16 @@ import { ErrorHelper } from '../shared/error-helper';
 import { HubConnection, HubConnectionBuilder } from '@aspnet/signalr';
 import { Message, OperationType } from '../shared/message.model';
 import { Config } from '../shared/config';
+import { ChatMessagesService } from './chat-messages.service';
+import { ChatMessageAddRequest, ChatMessageItem } from './chat-message-item.model';
 
 @Component({
   selector: 'app-root',
   providers: [
     RoomService,
     OrdersService,
-    AuthenticationService
+    AuthenticationService,
+    ChatMessagesService
   ],
   templateUrl: './orders.component.html',
   styleUrls: ['./orders.component.css']
@@ -42,6 +45,7 @@ export class OrdersComponent implements OnInit {
   public pricePerPizza: number;
   public slicesPerPizza: number = 8;
   public pricePerSlice: number = 0;
+  public chatMessages: ChatMessageItem[];
 
   @ViewChild(BaseChartDirective) chart: BaseChartDirective;
   
@@ -51,14 +55,16 @@ export class OrdersComponent implements OnInit {
   //public pieChartColours: any[] = [{ backgroundColor: ["#FFA1B5", "#7B68EE", "#87CEFA", "#B22222", "#FFE29A", "#D2B48C", "#90EE90", "#FF69B4", "#EE82EE", "#6A5ACD", "#b8436d", "#9ACD32", "#00d9f9", "#800080", "#FF6347", "#DDA0DD", "#a4c73c", "#a4add3", "#008000", "#DAA520", "#00BFFF", "#2F4F4F", "#FF8C00", "#A9A9A9", "#FFB6C1", "#00FFFF", "#6495ED", "#7FFFD4", "#F0F8FF", "#7FFF00", "#008B8B", "#9932CC", "#E9967A", "#8FBC8F", "#483D8B", "#D3D3D3", "#ADD8E6"] }];
   //public pieChartColours: any[] = [{ backgroundColor: ["#FF0000", "#FF6A00", "#FFD800", "#B6FF00", "#4CFF00", "#00FF21", "#00FF90", "#00FFFF", "#0094FF", "#0026FF", "#4800FF", "#B200FF", "#FF00DC", "#7F0000", "#7F3300", "#7F6A00", "#5B7F00", "#267F00", "#007F0E", "#007F46", "#007F7F", "#004A7F", "#00137F", "#21007F", "#57007F", "#7F006E", "#7F0037", "#DAFF7F", "#A5FF7F", "#7FFFFF", "#7FC9FF", "#7F92FF", "#A17FFF", "#D67FFF", "#FF7FB6", "#7F3F5B", "#DAFF7F"] }];
   //public pieChartColours: any[] = [{ backgroundColor: ["#A5FF7F", "#7F3F5B", "#A17FFF", "#7F6A00", "#21007F", "#7F0000", "#00FF21", "#DAFF7F", "#0094FF", "#B200FF", "#7F92FF", "#7F3300", "#007F46", "#00137F", "#FF6A00", "#00FF90", "#FF0000", "#7FFFFF", "#7FC9FF", "#004A7F", "#4CFF00", "#FF00DC", "#57007F", "#FFD800", "#DAFF7F", "#B6FF00", "#D67FFF", "#007F0E", "#00FFFF", "#267F00", "#0026FF", "#4800FF", "#5B7F00", "#FF7FB6", "#007F7F", "#7F006E", "#7F0037"] }];
-  public pieChartColours: any[] = [{ backgroundColor: ["#007F0E", "#B200FF", "#7F0000", "#7F92FF", "#FFD800", "#FF6A00", "#7F0037", "#7FFFFF", "#DAFF7F", "#21007F", "#7FC9FF", "#5B7F00", "#4CFF00", "#B6FF00", "#57007F", "#00FFFF", "#7F3F5B", "#FF0000", "#FF00DC", "#FF7FB6", "#007F46", "#7F3300", "#007F7F", "#A5FF7F", "#D67FFF", "#00137F", "#0094FF", "#DAFF7F", "#7F006E", "#00FF90", "#7F6A00", "#A17FFF", "#004A7F", "#0026FF", "#267F00", "#00FF21", "#4800FF"] }];
+  public pieChartColours: any[] = [{ backgroundColor: ["#007F0E", "#B200FF", "#7F0000", "#7F92FF", "#FFD800", "#FF6A00", "#7F0037", "#7FFFFF", "#DAFF7F", "#21007F", "#4800FF", "#5B7F00", "#4CFF00", "#B6FF00", "#57007F", "#00FFFF", "#7F3F5B", "#FF0000", "#FF00DC", "#FF7FB6", "#007F46", "#7F3300", "#007F7F", "#A5FF7F", "#D67FFF", "#00137F", "#0094FF", "#DAFF7F", "#7F006E", "#00FF90", "#7F6A00", "#A17FFF", "#004A7F", "#0026FF", "#267F00", "#00FF21", "#7F92FF"] }];
   public pieChartType: string = 'pie';
+  public newMessage: string = '';
 
   constructor(
     public router: Router,
     private roomService: RoomService,
     private ordersService: OrdersService,
-    private authenticationService: AuthenticationService) {
+    private authenticationService: AuthenticationService,
+    private chatMessagesService: ChatMessagesService) {
     this.order = new Order();
     this.order.who = this.authenticationService.getLoggedUser();
   }
@@ -73,6 +79,7 @@ export class OrdersComponent implements OnInit {
     connection.on('send', data => {
       //console.log(data);
       const message: Message = <Message>data;
+      console.log(message.operation);
       if(message) {
         switch(message.operation) {
           case OperationType.RoomCreated:
@@ -85,6 +92,7 @@ export class OrdersComponent implements OnInit {
          
             if (message.context == this.selectedRoomName) {
               this.loadOrdersInRoom(this.selectedRoomName);
+              this.loadChatMessages(this.selectedRoomName); //to refresh approver messages
               this.playSound_drop();
             }
             break;
@@ -106,9 +114,15 @@ export class OrdersComponent implements OnInit {
               this.pricePerPizza = null;
               this.slicesPerPizza = 8;
               this.loadOrdersInRoom(this.selectedRoomName);
+              this.loadChatMessages(this.selectedRoomName); //to refresh approver messages
               this.playSound_drop();
             }
             break;
+          case OperationType.NewChatMessage:
+            if (message.context == this.selectedRoomName) {
+              this.loadChatMessages(this.selectedRoomName);
+              this.playSound_chatbeep();
+            }
         }
       }
     });
@@ -150,6 +164,7 @@ export class OrdersComponent implements OnInit {
 
     this.loadOrdersInRoom(this.selectedRoomName);
     this.onPriceChange();
+    this.loadChatMessages(this.selectedRoomName);
 
     return false;
   }
@@ -193,6 +208,14 @@ export class OrdersComponent implements OnInit {
       if (o.who == currentUserEmail) {      
         this.orderPrice = o.price.toString();    
       }
+    });
+  }
+
+  private loadChatMessages(room: string) {
+    console.log("loadChatMessages");
+    this.chatMessagesService.getAllMessages(room).subscribe(m => {
+      this.chatMessages = m;
+      console.log("loaded")
     });
   }
 
@@ -252,7 +275,8 @@ export class OrdersComponent implements OnInit {
     });
   }
 
-  public makeOrder(): boolean {    
+  public makeOrder(): boolean {
+    console.log("make order");
     this.ordersService.makeOrder(this.order)
       .subscribe(result => {
         if (result)
@@ -347,6 +371,11 @@ export class OrdersComponent implements OnInit {
     audio.play();
   }
 
+  playSound_chatbeep() {
+    const audio = new Audio("assets/chatbeep.wav");
+    audio.play();
+  }
+
   // events
   public chartClicked(e: any): void {
     //console.log(e);
@@ -354,5 +383,38 @@ export class OrdersComponent implements OnInit {
 
   public chartHovered(e: any): void {
     //console.log(e);
+  }
+
+  public sendMessage() {
+    if (this.newMessage !== '') {
+      let request = new ChatMessageAddRequest();
+      request.room = this.selectedRoomName;
+      request.message = this.newMessage;
+      request.who = this.authenticationService.getLoggedUser();
+      this.chatMessagesService.addMessage(request).subscribe(
+        result => {
+          console.log("Add OK");
+          if (result)
+            this.newMessage = '';
+        },
+        error => alert(ErrorHelper.getErrorMessage(error))
+      );
+    }
+  }
+
+  public getDate(date: Date) {
+    let d = new Date(date);
+    let hour = ('0' + d.getHours()).slice(-2);
+    let minute = ('0' + d.getMinutes()).slice(-2);
+    let second = ('0' + d.getUTCSeconds()).slice(-2);
+    return hour + ':' + minute + ':' + second;
+  }
+
+  public getApproversClass(isApprover: boolean): string {
+    console.log(isApprover);
+    if (isApprover)
+      return "chatApproverRow";
+    else
+      return "";
   }
 }
