@@ -79,3 +79,21 @@
 <div *ngIf="!selectedRoomName">
   <h3>Choose your room</h3>
 </div>
+
+<br />
+<div>
+  <form #chatForm="ngForm" (submit)="sendMessage()" class="form-inline">
+    <div class="form-group">
+      <input type="text" class="form-control" id="newMessage" name="newMessage" [(ngModel)]="newMessage" width="600" autoComplete="off">
+      <button class="btn btn-primary btn-submit" type="submit">Send</button>
+      </div>
+  </form>
+  <div *ngIf="chatMessages">
+    <table id="chat">
+      <tr *ngFor="let message of chatMessages" >
+        <td class="chatUser" [ngClass]="{ 'chatUserApprover' : message.isApprover, 'chatRow': !message.isApprover }">{{getDate(message.date)}} {{message.who}}</td>
+        <td class="chatMessage">{{message.message}}</td>
+      </tr>
+    </table>
+  </div>
+</div>
