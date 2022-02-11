@@ -92,7 +92,7 @@
     <table id="chat">
       <tr *ngFor="let message of chatMessages" >
         <td class="chatUser" [ngClass]="{ 'chatUserApprover' : message.isApprover, 'chatRow': !message.isApprover }">{{getDate(message.date)}} {{message.who}}</td>
-        <td class="chatMessage">{{message.message}}</td>
+        <td class="chatMessage" [ngClass]="{ 'chatMyMessage': isMyMessage(message.who)}" >{{message.message}}</td>
       </tr>
     </table>
   </div>

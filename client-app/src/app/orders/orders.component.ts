@@ -77,9 +77,8 @@ export class OrdersComponent implements OnInit {
   private registerSignalR() {
     const connection = new HubConnectionBuilder().withUrl(`${Config.baseUrl}message`).build();
     connection.on('send', data => {
-      //console.log(data);
       const message: Message = <Message>data;
-      console.log(message.operation);
+
       if(message) {
         switch(message.operation) {
           case OperationType.RoomCreated:
@@ -393,7 +392,6 @@ export class OrdersComponent implements OnInit {
       request.who = this.authenticationService.getLoggedUser();
       this.chatMessagesService.addMessage(request).subscribe(
         result => {
-          console.log("Add OK");
           if (result)
             this.newMessage = '';
         },
@@ -411,10 +409,13 @@ export class OrdersComponent implements OnInit {
   }
 
   public getApproversClass(isApprover: boolean): string {
-    console.log(isApprover);
     if (isApprover)
       return "chatApproverRow";
     else
       return "";
+  }
+
+  public isMyMessage(who: string): boolean {
+    return who === this.authenticationService.getLoggedUser();
   }
 }
