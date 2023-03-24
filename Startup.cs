@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Amazon.Auth.AccessControlPolicy;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -12,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using MongoDB.Driver.Core.WireProtocol.Messages.Encoders.BinaryEncoders;
 using PizzaHotOnion.Configuration;
 using PizzaHotOnion.Infrastructure.Security;
 using PizzaHotOnion.Repositories;
@@ -57,32 +59,33 @@ namespace PizzaHotOnion
       services.AddSingleton<IEmailService, EmailService>();
       services.AddScoped<IChatMessageService, ChatMessageService>();
       services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
+      services.AddSignalR(config =>
+      {
+      });
+      services.AddSignalRCore().AddHubOptions<MessageHub>(config =>
+      {
+
+      });
 
       //JWT
       tokenValidationParameters = new TokenValidationParametersBuilder().Build();
-      services
-      .AddAuthenticationCore(options =>
+
+      services.AddAuthorization(config =>
       {
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-      })
-      .AddAuthentication(options =>
-      {
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-      }).AddJwtBearer(o =>
-      {
-        // You also need to update /wwwroot/app/scripts/app.js
-        //o.Authority = tokenValidationParameters.ValidIssuer;
-        o.Audience = tokenValidationParameters.ValidAudience;
-        o.TokenValidationParameters = tokenValidationParameters;
-        o.RequireHttpsMetadata = false;
+
       });
+      services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
+        {
+          options.Audience = tokenValidationParameters.ValidAudience;
+          options.TokenValidationParameters = tokenValidationParameters;
+        });
+
 
       // Register the Swagger generator, defining one or more Swagger documents
       services.AddSwaggerGen(c =>
       {
-        c.SwaggerDoc("v1", new Info { Title = "Pizza Hot Onion API", Version = "v1" });
+        c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "Pizza Hot Onion API", Version = "v1" });
       });
     }
 
@@ -111,6 +114,20 @@ namespace PizzaHotOnion
         config.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()
       );
 
+
+      app.UseDefaultFiles();
+      app.UseStaticFiles();
+      app.UseRouting();
+      app.UseAuthentication();
+      app.UseAuthorization();
+
+      app.UseEndpoints(endpoints =>
+      {
+        endpoints.MapControllers();
+        endpoints.MapHub<MessageHub>("/message");
+      });
+
+
       // Add JWT generation endpoint
       app.UseMiddleware<TokenProviderMiddleware>(
         Options.Create(new TokenProviderOptions
@@ -122,15 +139,6 @@ namespace PizzaHotOnion
       );
 
       app.UseAuthentication();
-
-      app.UseSignalR(routes =>
-      {
-        routes.MapHub<MessageHub>("/message");
-      });
-
-      app.UseDefaultFiles(new DefaultFilesOptions { DefaultFileNames = new List<string> { "index.html" } })
-          .UseStaticFiles()
-          .UseMvc();
 
       // Enable middleware to serve generated Swagger as a JSON endpoint.
       app.UseSwagger();
