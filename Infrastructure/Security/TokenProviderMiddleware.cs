@@ -63,7 +63,7 @@ namespace PizzaHotOnion.Infrastructure.Security
       // var password = context.Request.Form["password"];
       var username = login.Username;
       var password = login.Password;
-      logger.LogInformation("JSON from request body: " + username + "/" + password);
+      //logger.LogInformation("JSON from request body: " + username + "/" + password);
 
       var identity = await GetIdentity(username, password);
       if (identity == null)

@@ -142,10 +142,11 @@ namespace PizzaHotOnion.Controllers
 
       if (sendMessage)
       {
+        var baseUrl = string.Format("{0}://{1}/login", this.Request.Scheme, this.Request.Host.Value.ToString());
         var users = await this.userRepository.GetAll();
         if (users != null && users.Count() > 0)
         {
-          string initialMessage = $"Oops someone is hungry. The pizza has been just opened in {orderDTO.Room} room by {orderDTO.Who}. Can you join me? Let's get some pizza.";
+          string initialMessage = $"Oops someone is hungry. The pizza has been just opened in {orderDTO.Room} room by {orderDTO.Who}. Can you join me at {baseUrl}? Let's get some pizza.";
           if (System.IO.File.Exists("InitialMessage.txt"))
           {
             var fileInitialMessage = System.IO.File.ReadAllText("InitialMessage.txt");

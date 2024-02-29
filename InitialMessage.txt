@@ -1,7 +1,9 @@
 ﻿
 ----
 
-NEW FEATURE: Chat. Refresh your browser cache!
+2024-02-29 (1.4.1): What's NEW in Pizza HotOnion:
+* Backend works now on .NET 7
+* "someone is hungry" email now contains a link to the website
 
 2022-02-11 (1.4.0): What's NEW in Pizza HotOnion:
 * IMPORTANT: Please hit: CTRL+F5 in your browser to reload the page. After that there should be "ver. 1.4.0" in the bottom-right corner of the page
