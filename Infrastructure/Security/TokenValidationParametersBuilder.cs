@@ -6,10 +6,10 @@ namespace PizzaHotOnion.Infrastructure.Security
 {
   public class TokenValidationParametersBuilder
   {
-    public TokenValidationParameters Build()
+    public TokenValidationParameters Build(string key)
     {
       // Add JWT Auth
-      var signingKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(SecurityConsts.JWTKey));
+      var signingKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(key));
       var tokenValidationParameters = new TokenValidationParameters
       {
         // The signing key must match!

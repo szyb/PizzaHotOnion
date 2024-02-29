@@ -9,7 +9,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -68,7 +70,8 @@ namespace PizzaHotOnion
       });
 
       //JWT
-      tokenValidationParameters = new TokenValidationParametersBuilder().Build();
+      var key = Program.Configuration.GetValue<string>("JWTKey");
+      tokenValidationParameters = new TokenValidationParametersBuilder().Build(key);
 
       services.AddAuthorization(config =>
       {
@@ -90,7 +93,7 @@ namespace PizzaHotOnion
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-    public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
     {
       loggerFactory
         .AddFile("Logs/HotOnion-{Date}.log");
