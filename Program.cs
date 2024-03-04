@@ -10,6 +10,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Debug;
 using Microsoft.Extensions.Hosting;
+using Serilog;
+using Serilog.Events;
 
 namespace PizzaHotOnion
 {
@@ -24,6 +26,17 @@ namespace PizzaHotOnion
       var builder = new ConfigurationBuilder()
           .AddJsonFile("appsettings.json");
 
+      Log.Logger = new LoggerConfiguration()
+        .MinimumLevel.Debug()
+        .WriteTo.Console()
+        .WriteTo.File(
+          "Logs/HotOnion-.log",
+          outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fffff} {Level:u3}]{ThreadId}|{SourceContext}| {Message:l}{NewLine}{Exception}",
+          rollingInterval: RollingInterval.Day)
+        .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Information)
+        .CreateLogger();
+      Log.Logger.Information("Hi");
+
       Configuration = builder.Build();
 
       BuildWebHost(args).Run();
@@ -33,9 +46,8 @@ namespace PizzaHotOnion
         Host.CreateDefaultBuilder(args)
             .ConfigureLogging((hostingContext, logging) =>
             {
-              logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
-              logging.AddConsole();
-              logging.AddDebug();
+              logging.ClearProviders();
+              logging.AddSerilog(Log.Logger);
             })
             .ConfigureWebHostDefaults(webBuilder =>
             {
