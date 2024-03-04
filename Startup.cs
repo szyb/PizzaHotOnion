@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -68,6 +69,8 @@ namespace PizzaHotOnion
       {
 
       });
+      services.AddWindowsService();
+      services.AddHostedService<DoNothingBackgroundService>();
 
       //JWT
       var key = Program.Configuration.GetValue<string>("JWTKey");
@@ -103,6 +106,7 @@ namespace PizzaHotOnion
         app.UseDeveloperExceptionPage();
       }
 
+
       app.Use(async (context, next) =>
       {
         await next();
@@ -117,9 +121,12 @@ namespace PizzaHotOnion
         config.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()
       );
 
-
       app.UseDefaultFiles();
-      app.UseStaticFiles();
+      app.UseStaticFiles(new StaticFileOptions()
+      {
+        RequestPath = PathString.Empty,
+        FileProvider = new PhysicalFileProvider(Path.Combine(Environment.CurrentDirectory, "wwwroot"))
+      });
       app.UseRouting();
       app.UseAuthentication();
       app.UseAuthorization();
