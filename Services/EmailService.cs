@@ -34,34 +34,36 @@ namespace PizzaHotOnion.Services
     {
       try
       {
-        SmtpClient client = new SmtpClient
+        using (SmtpClient client = new SmtpClient
         {
           Host = server,
           Port = port,
           EnableSsl = false,
           DeliveryMethod = SmtpDeliveryMethod.Network,
           Credentials = new System.Net.NetworkCredential(user, passwd),
-          Timeout = 10000,
-        };
-
-        if (string.IsNullOrWhiteSpace(to))
-          return;
-
-        var recipents = to.Split(",");
-        MailMessage message = new MailMessage();
-        message.From = new MailAddress(from);
-        foreach (var recipent in recipents)
+          Timeout = 10000
+        })
         {
-          try
+
+          if (string.IsNullOrWhiteSpace(to))
+            return;
+
+          var recipents = to.Split(",");
+          MailMessage message = new MailMessage();
+          message.From = new MailAddress(from);
+          foreach (var recipent in recipents)
           {
-            message.To.Add(recipent);
+            try
+            {
+              message.To.Add(recipent);
+            }
+            catch { }
           }
-          catch { }
+          message.Body = body;
+          message.Subject = subject;
+          client.Send(message);
+          loggger.LogDebug($"Mail has been sent to {to}, subject {subject}");
         }
-        message.Body = body;
-        message.Subject = subject;
-        client.Send(message);
-        loggger.LogDebug($"Mail has been sent to {to}, subject {subject}");
       }
       catch (Exception ex)
       {
